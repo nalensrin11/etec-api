@@ -1,59 +1,20 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Product Management API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel API using JWT bearer tokens. Run `php artisan migrate:fresh --seed`, then `POST /api/login` using a seeded account (`admin@example.com` or `student@example.com`, password `password`) and send `Authorization: Bearer <access_token>`. Tokens expire after the configured `JWT_TTL` (60 minutes by default); use `POST /api/refresh` with the current bearer token to obtain a new one. A ready-to-import Postman collection is in `postman/`.
 
-## About Laravel
+See [API Testing Guide](docs/API_TESTING.md) for every endpoint, role requirement, validation rule, example request, and cURL/Postman test flow.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Roles and registration
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- `POST /api/register` registers an **instructor** only (`name`, `email`, `password`, `password_confirmation`). An instructor logs in, creates one class at `POST /api/classes`, then creates/manages student users at `/api/users`. Their students are automatically assigned to that class.
+- **Admin** has all user, class, category, and product management access across classes.
+- **Instructor** manages their own class, its student accounts, categories, and products in their class.
+- **Student** is read-only. Public website clients should call `GET /api/public/categories` and `GET /api/public/products`; both require no authentication and expose active records only.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Public product URLs also support `GET /api/public/products/{id}` for details, `category_id`, `min_price`, `max_price`, `promotion=1`, and price ordering: `sort=low_price` or `sort=high_price` (alternatively, `sort=price&direction=asc|desc`). Promotions are products where `sale_price < regular_price`; `GET /api/public/products/promotions` is a shortcut.
 
-## Learning Laravel
+The protected management endpoints are `/api/classes`, `/api/users`, `/api/categories`, and `/api/products`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+`/api/products` supports `search`, `category_id`, `class_id` (admins only), `status`, `min_price`, `max_price`, `sort`, `direction`, `page`, and `per_page`. Price filters use `COALESCE(sale_price, regular_price)`, the effective selling price.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Students are always restricted to their own class; they cannot choose `class_id` or `created_by`. Admins can select a class while creating a product. Product uploads use `images[]` (jpg/jpeg/png/webp, max 5MB each, 10 total). The first image becomes primary. Image endpoints are POST/DELETE/PATCH `/api/products/{product}/images` and PATCH `/api/products/{product}/images/{image}/primary`.

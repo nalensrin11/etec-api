@@ -1,0 +1,6 @@
+@extends('portal.layout')
+@section('content')
+<h1>Welcome, {{ $user->name }}</h1>
+@if($user->isInstructor())<div class="card"><h2>Create Class</h2><form method="post" action="{{ route('portal.class.store') }}">@csrf <div class="grid"><div><label>Class Name</label><input name="name" required></div><div><label>Class Code</label><input name="code" required></div><div><label>Status</label><select name="status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div><button>Create Class</button></form></div>@elseif(!$classes->count())<div class="card"><h2>Join a class</h2><form method="post" action="{{ route('portal.class.join') }}">@csrf<label>Class Join Code</label><input name="join_code" required><button>Join Class</button></form></div>@endif
+<h2>{{ $user->isInstructor() ? 'My Classes' : 'Your Class' }}</h2><div class="grid">@forelse($classes as $class)<div class="card"><h3>{{ $class->name }}</h3><p><code>{{ $class->code }}</code></p>@if($user->isInstructor())<p>{{ $class->users_count }} Students · {{ $class->products_count }} Products</p>@else<p>Instructor: {{ $class->instructor?->name ?? 'Not assigned' }} · {{ $class->products_count }} Products</p>@endif<a class="button" href="{{ route('portal.class.show',$class) }}">Open Class</a></div>@empty <p>No class yet.</p>@endforelse</div>
+@endsection
